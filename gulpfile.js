@@ -8,7 +8,7 @@ var exec = require('child_process').exec;
 const path = {};
 
 // Dropbox acess
-const token='iernAqGWD_kAAAAAAAAe19plIWkCymKPuYd8Ll5GG82Y_H62baRYouaA8gOWfpYY';
+const token='';
 const dbx = new Dropbox({ accessToken: token });
 
 // Tasks
