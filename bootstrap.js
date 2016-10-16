@@ -2,8 +2,7 @@ var fs = require('fs');
 
 // default path for cv.docx, cv.pdf and remote Dropbox sync folder
 const path = {
-  src: 'R:\\CV.docx',
-  pdf: 'R:\\CV.pdf',
+  src: [ '/CV*.docx' ],
   dest: '/Job/resume/'
 };
 

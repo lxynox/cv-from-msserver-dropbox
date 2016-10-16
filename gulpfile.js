@@ -3,9 +3,11 @@ var gulp = require('gulp');
 var Dropbox = require('dropbox');
 var Promise = require('bluebird');
 var readFile = Promise.promisify(require('fs').readFile);
-var exec = require('child_process').exec;
 
-const path = {};
+var exec = require('child_process').exec;
+var path = require('path');
+
+const PATH = {}; // override by path.json values
 
 // Dropbox acess
 const token='';
@@ -17,7 +19,7 @@ gulp.task('path', (done) => {
   readFile('path.json')
     .then(content => {
       const config = JSON.parse(content);
-      Object.assign(path, config, {});
+      Object.assign(PATH, config, {});
 
       done();
     })
@@ -27,57 +29,49 @@ gulp.task('path', (done) => {
 
 });
 
-gulp.task('pdf', (done) => {
-
-  exec(`cscript saveAsPDF.js ${path.src} ${path.pdf}`, (err, stdout, stderr) => {
-    if (err) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-
-    console.log(`\nPDF saved to: ${path.pdf}\n`);
-    done();
-  });
-
-});
-
-gulp.task('sync', ['pdf'], () => {
-
-  readFile(path.src)
-    .then(content => {
-      return dbx.filesUpload({
-        contents: content, 
-        path: path.dest + 'CV.docx',
-        mode: {
-          '.tag': 'overwrite'
-        },
-        autorename: false
-      });
-    })
-    .catch(error => {
-      console.log(error);
-    });
-
-  readFile(path.pdf)
-    .then(content => {
-      return dbx.filesUpload({
-        contents: content, 
-        path: path.dest + 'CV.pdf',
-        mode: {
-          '.tag': 'overwrite'
-        },
-        autorename: false
-      });
-    })
-    .catch(error => {
-      console.log(error);
-    });
-
-});
+gulp.task('clean', () => {});
 
 gulp.task('watch', ['path'],  () => {
-  console.log(`\n?? Watching source: ${path.src}\n`);
-  gulp.watch(path.src, ['sync']);
+  
+  console.log(`\n?? Watching source: ${PATH.src}\n`);
+
+  const watcher = gulp.watch(PATH.src, ['clean']);
+  watcher.on('change', (event) => {
+    const p = event.path,
+          t = event.type;
+
+    const src = p,
+          pdf = path.dirname(p) + path.basename(p, '.docx') + '.pdf';
+
+    exec(`cscript saveAsPDF.js ${src} ${pdf}`, (err, stdout, stderr) => {
+      if (err) {
+        console.error(`exec error: ${err}`);
+        return;
+      }
+
+      console.log(`\nPDF saved to: ${pdf}\n`);
+
+      [ src, pdf ].forEach( file => {
+        readFile(file)
+          .then(content => {
+            return dbx.filesUpload({
+              contents: content,
+              path: PATH.dest + path.basename(file),
+              mode: {
+                '.tag': 'overwrite'
+              },
+              autorename: false
+            });
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      });
+
+      console.log(`\n${src} and ${pdf} uploaded ^_^`);
+    });
+  });
+
 });
 
 gulp.task('default', ['watch']);
