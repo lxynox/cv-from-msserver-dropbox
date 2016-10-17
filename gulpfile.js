@@ -66,7 +66,7 @@ gulp.task('watch', ['path'],  () => {
                      return Promise.reject(err);
                    });
         };
-        let asyncUploadTasks = [ src, pdf ].map( asyncUpload );
+        const asyncUploadTasks = [ src, pdf ].map( asyncUpload );
       
         return Promise.all(asyncUploadTasks)
                       .then( (msgs) => {
